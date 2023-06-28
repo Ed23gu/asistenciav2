@@ -6,14 +6,14 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:simple_month_year_picker/simple_month_year_picker.dart';
 
-class CalenderScreen extends StatefulWidget {
-  const CalenderScreen({super.key});
+class PlanillaScreen extends StatefulWidget {
+  const PlanillaScreen({super.key});
 
   @override
-  State<CalenderScreen> createState() => _CalenderScreenState();
+  State<PlanillaScreen> createState() => _PlanillaScreenState();
 }
 
-class _CalenderScreenState extends State<CalenderScreen> {
+class _PlanillaScreenState extends State<PlanillaScreen> {
   @override
   Widget build(BuildContext context) {
     final attendanceService = Provider.of<AttendanceService>(context);
