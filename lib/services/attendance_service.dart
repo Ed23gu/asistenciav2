@@ -3,7 +3,6 @@ import 'package:employee_attendance/constants/constants.dart';
 import 'package:employee_attendance/models/attendance_model.dart';
 import 'package:employee_attendance/models/department_model.dart';
 import 'package:employee_attendance/models/user_model.dart';
-
 import 'package:employee_attendance/services/location_service.dart';
 import 'package:employee_attendance/utils/utils.dart';
 import 'package:flutter/material.dart';
