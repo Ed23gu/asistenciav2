@@ -23,7 +23,7 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
           alignment: Alignment.centerLeft,
           margin: const EdgeInsets.only(left: 20, top: 60, bottom: 10),
           child: const Text(
-            "Mi Asistencia",
+            "Resumen Asistencias",
             style: TextStyle(fontSize: 25),
           ),
         ),

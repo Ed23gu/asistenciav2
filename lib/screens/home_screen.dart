@@ -1,4 +1,4 @@
-import 'package:employee_attendance/screens/attendance_screen.dart';
+import 'package:employee_attendance/screens/planilla_screen.dart';
 import 'package:employee_attendance/screens/calender_screen.dart';
 import 'package:employee_attendance/screens/profile_screen.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: IndexedStack(
         index: currentIndex,
-        children: const [CalenderScreen(), AttendanceScreen(), ProfileScreen()],
+        children: const [CalenderScreen(), PlanillaScreen(), ProfileScreen()],
       ),
       bottomNavigationBar: Container(
         height: 70,
