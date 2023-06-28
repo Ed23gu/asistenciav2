@@ -12,7 +12,7 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // load env
-  await dotenv.load();
+  await dotenv.load(fileName: ".env");
   // Initialize Supabase
   String supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
   String supabaseKey = dotenv.env['SUPABASE_KEY'] ?? '';
