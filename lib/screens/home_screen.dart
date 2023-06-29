@@ -15,7 +15,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   List<IconData> navigationIcons = [
     FontAwesomeIcons.solidCalendarDays,
-    FontAwesomeIcons.check,
+    FontAwesomeIcons.list,
     FontAwesomeIcons.solidUser
   ];
 
@@ -29,18 +29,18 @@ class _HomeScreenState extends State<HomeScreen> {
         children: const [CalenderScreen(), PlanillaScreen(), ProfileScreen()],
       ),
       bottomNavigationBar: Container(
-        height: 70,
+        height: 60,
         margin: const EdgeInsets.only(left: 12, right: 12, bottom: 24),
         decoration: BoxDecoration(
             color: Theme.of(context).brightness == Brightness.light
                 ? Colors.white
                 //  color: Colors.white,
                 : Color.fromARGB(255, 43, 41, 41),
-            borderRadius: BorderRadius.all(Radius.circular(40)),
+            borderRadius: BorderRadius.all(Radius.circular(20)),
             boxShadow: [
               BoxShadow(
                   color: Color.fromARGB(110, 18, 148, 255),
-                  blurRadius: 10,
+                  blurRadius: 5,
                   offset: Offset(2, 2))
             ]),
         child: Row(
