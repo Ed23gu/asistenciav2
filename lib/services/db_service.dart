@@ -14,7 +14,9 @@ class DbService extends ChangeNotifier {
   DepartmentModel? depModel;
   DepartmentModel? departmentModel;
   List<DepartmentModel> allDepartments = [];
+  List<UserModel> allempleados = [];
   int? employeeDepartment;
+  String? empleadolista;
 
   String generateRandomEmployeeId() {
     final random = Random();
@@ -58,6 +60,22 @@ class DbService extends ChangeNotifier {
         .toList();
     notifyListeners();
   }
+
+
+
+  Future<void> getAllempleados() async {
+    final List result =
+    await _supabase.from(Constants.employeeTable).select();
+    allempleados = result
+        .map((empleados) => UserModel.fromJson(empleados))
+        .toList();
+    notifyListeners();
+  }
+
+
+  ////////
+
+
 
   Future updateProfile(String name, BuildContext context) async {
     await _supabase.from(Constants.employeeTable).update({

@@ -1,4 +1,4 @@
-import 'package:employee_attendance/screens/planilla_screen.dart';
+import 'package:employee_attendance/screens/planillas_screen.dart';
 import 'package:employee_attendance/screens/calender_screen.dart';
 import 'package:employee_attendance/screens/profile_screen.dart';
 import 'package:flutter/material.dart';
