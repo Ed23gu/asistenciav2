@@ -34,7 +34,7 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
     248,
     250,
   ];
-  late EmployeeDataSource _employeeDataSource;
+  late EmployeeDataSource _employeeDataSource ;
   List<Employee> _employees = <Employee>[];
 
   @override
@@ -62,6 +62,7 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
                   e['employee_id'].toString(),
                   e['date'] as String,
                   e['nombre_asis'] as String,
+                  e['created_at'] as String,
                 ))
             .toList();
         print(employeeList);
@@ -77,8 +78,9 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String idempleado;
     final dbService = route.Provider.of<DbService>(context);
+    String idempleado = 'afebcc8c-9b68-4d49-83a5-ca67971eaedb';
+
     // Using below conditions because build can be called multiple times
     dbService.allempleados.isEmpty ? dbService.getAllempleados() : null;
     final attendanceService = route.Provider.of<AttendanceService>(context);
@@ -167,7 +169,7 @@ height: 60,
                               'id',
                               FilterCondition(
                                   type: FilterType.equals,
-                                  value: dbService.empleadolista));
+                                  value: idempleado));
                           // filterData(); // Volver a filtrar los datos cuando se selecciona una opción nueva
                         });
                       },
@@ -192,7 +194,7 @@ height: 60,
                         _employeeDataSource.addFilter(
                           'id',
                           FilterCondition(
-                            value: dbService.empleadolista,
+                            value: idempleado,
                            // filterOperator: FilterOperator.and,
                             type: FilterType.equals,
                           ),
@@ -208,14 +210,25 @@ height: 60,
                       });
                     },
                     child: const Text("Mes",
-                        style: const TextStyle(fontSize: 18))),
+                        style: const TextStyle(fontSize: 17))),
                 Container(
                   width: 10,
                 ),
                 Text(
                   fecha,
                   style: const TextStyle(fontSize: 18),
-                ),
+                ), MaterialButton(
+                    child: Text('fechass'),
+                    onPressed: () {
+                      _employeeDataSource.addFilter(
+                        'Fecha2',
+                        FilterCondition(
+                          value: fecha,
+                          type: FilterType.contains,
+                          filterBehavior: FilterBehavior.stringDataType,
+                        ),
+                      );
+                    }),
                 MaterialButton(
                     child: Text('Clear Filters'),
                     onPressed: () {
@@ -236,7 +249,6 @@ height: 60,
             ),
             SfDataGrid(
               source: _employeeDataSource,
-              // columnWidthMode: ColumnWidthMode.auto,
               columnWidthCalculationRange: ColumnWidthCalculationRange.allRows,
               //allowFiltering: true,
               allowSorting: true,
@@ -284,11 +296,22 @@ height: 60,
                           'Fecha',
                           overflow: TextOverflow.ellipsis,
                         ))),
+                GridColumn(
+                    columnName: 'date2',
+                    allowFiltering: false,
+                    allowSorting: false,
+                    label: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Fecha2',
+                          overflow: TextOverflow.ellipsis,
+                        ))),
               ],
               stackedHeaderRows: <StackedHeaderRow>[
                 StackedHeaderRow(cells: [
                   StackedHeaderCell(
-                      columnNames: ['id', 'name', 'date'],
+                      columnNames: ['id', 'name','date'  , 'date2'],
                       child: Container(
                          // color: Colors.cyan[200],
                           child: const Center(
@@ -310,6 +333,7 @@ class EmployeeDataSource extends DataGridSource {
               DataGridCell<String>(columnName: 'id', value: e.id),
               DataGridCell<String>(columnName: 'name', value: e.name),
               DataGridCell<String>(columnName: 'date', value: e.date),
+              DataGridCell<String>(columnName: 'date2', value: DateFormat('MMMM yyyy','en_US').format(e.date2 as DateTime) )
             ]))
         .toList();
   }
@@ -334,7 +358,7 @@ class EmployeeDataSource extends DataGridSource {
 
 class Employee {
   /// Creates the employee class with required details.
-  Employee(this.id, this.name, this.date);
+  Employee(this.id, this.name, this.date , this.date2);
 
   /// Id of an employee.
   final String id;
@@ -344,4 +368,6 @@ class Employee {
 
   /// Designation of an employee.
   final String date;
+
+  final String date2;
 }
