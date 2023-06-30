@@ -1,6 +1,5 @@
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:employee_attendance/constants/constants.dart';
-import 'package:employee_attendance/models/attendance_model.dart';
 import 'package:employee_attendance/services/attendance_service.dart';
 import 'package:employee_attendance/services/db_service.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +33,8 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
     248,
     250,
   ];
-  late EmployeeDataSource _employeeDataSource ;
+  late EmployeeDataSource _employeeDataSource =
+      EmployeeDataSource(employeeData: []);
   List<Employee> _employees = <Employee>[];
 
   @override
@@ -59,11 +59,15 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
         final data = response as List<dynamic>;
         final employeeList = data
             .map((e) => Employee(
-                  e['employee_id'].toString(),
-                  e['date'] as String,
-                  e['nombre_asis'] as String,
-                  e['created_at'] as String,
-                ))
+                e['employee_id'].toString(),
+                e['date'].toString(),
+                e['created_at'].toString(),
+                e['obraid'].toString(),
+                e['check_in'].toString(),
+                e['check_out'].toString(),
+                e['obraid2'].toString(),
+                e['check_in2'].toString(),
+                e['check_out2'].toString()))
             .toList();
         print(employeeList);
         return employeeList;
@@ -79,7 +83,7 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
   @override
   Widget build(BuildContext context) {
     final dbService = route.Provider.of<DbService>(context);
-    String idempleado = 'afebcc8c-9b68-4d49-83a5-ca67971eaedb';
+    //String idempleado = 'afebcc8c-9b68-4d49-83a5-ca67971eaedb';
 
     // Using below conditions because build can be called multiple times
     dbService.allempleados.isEmpty ? dbService.getAllempleados() : null;
@@ -141,35 +145,34 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
             dbService.allempleados.isEmpty
                 ? const LinearProgressIndicator()
                 : Container(
-            //  padding: EdgeInsets.all(5),
-              margin: const EdgeInsets.only(left: 10, top: 5, bottom: 10,right: 10),
-height: 60,
+                    //  padding: EdgeInsets.all(5),
+                    margin: const EdgeInsets.only(
+                        left: 10, top: 5, bottom: 10, right: 10),
+                    height: 60,
                     width: double.infinity,
                     child: DropdownButtonFormField(
                       decoration:
-                          const InputDecoration(
-                              border: OutlineInputBorder()),
+                          const InputDecoration(border: OutlineInputBorder()),
                       value: dbService.empleadolista ??
                           dbService.allempleados.first.id,
                       items: dbService.allempleados.map((UserModel item) {
                         return DropdownMenuItem(
-                            value: item.id,
-                          child :Text(
+                          value: item.id,
+                          child: Text(
                             item.name.toString(),
-                            style: const TextStyle(fontSize: 18 ),
+                            style: const TextStyle(fontSize: 18),
                           ),
                         );
                       }).toList(),
                       onChanged: (selectedValue) {
                         setState(() {
                           dbService.empleadolista = selectedValue.toString();
-                          idempleado = selectedValue.toString();
                           _employeeDataSource.clearFilters();
                           _employeeDataSource.addFilter(
                               'id',
                               FilterCondition(
                                   type: FilterType.equals,
-                                  value: idempleado));
+                                  value: dbService.empleadolista));
                           // filterData(); // Volver a filtrar los datos cuando se selecciona una opción nueva
                         });
                       },
@@ -184,23 +187,23 @@ height: 60,
                 OutlinedButton(
                     onPressed: () async {
                       final selectedDate =
-                      await SimpleMonthYearPicker.showMonthYearPickerDialog(
-                          context: context, disableFuture: true);
+                          await SimpleMonthYearPicker.showMonthYearPickerDialog(
+                              context: context, disableFuture: true);
                       String pickedMonth =
-                      DateFormat('MMMM yyyy').format(selectedDate);
+                          DateFormat('MMMM yyyy').format(selectedDate);
                       setState(() {
                         fecha = pickedMonth;
                         _employeeDataSource.clearFilters();
                         _employeeDataSource.addFilter(
                           'id',
                           FilterCondition(
-                            value: idempleado,
-                           // filterOperator: FilterOperator.and,
+                            value: dbService.empleadolista,
+                            // filterOperator: FilterOperator.and,
                             type: FilterType.equals,
                           ),
                         );
                         _employeeDataSource.addFilter(
-                          'name',
+                          'fecha',
                           FilterCondition(
                             value: fecha,
                             filterOperator: FilterOperator.and,
@@ -217,7 +220,8 @@ height: 60,
                 Text(
                   fecha,
                   style: const TextStyle(fontSize: 18),
-                ), MaterialButton(
+                ),
+                MaterialButton(
                     child: Text('fechass'),
                     onPressed: () {
                       _employeeDataSource.addFilter(
@@ -239,7 +243,6 @@ height: 60,
             Text(dbService.empleadolista == null
                 ? "-"
                 : dbService.empleadolista!),
-
             Row(
               children: [
                 Container(
@@ -253,7 +256,7 @@ height: 60,
               //allowFiltering: true,
               allowSorting: true,
               allowMultiColumnSorting: true,
-              columnWidthMode: ColumnWidthMode.auto,
+              //columnWidthMode: ColumnWidthMode.auto,
               //  gridLinesVisibility: GridLinesVisibility.both,
               headerGridLinesVisibility: GridLinesVisibility.both,
               onFilterChanging: (DataGridFilterChangeDetails details) {
@@ -266,7 +269,7 @@ height: 60,
               columns: [
                 GridColumn(
                     columnName: 'id',
-                   // visible: false,
+                    visible: false,
                     label: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         alignment: Alignment.centerLeft,
@@ -275,20 +278,20 @@ height: 60,
                           overflow: TextOverflow.ellipsis,
                         ))),
                 GridColumn(
-                    columnName: 'name',
+                    columnName: 'fecha',
                     allowFiltering: false,
                     allowSorting: false,
                     label: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Name',
+                          'fec',
                           overflow: TextOverflow.ellipsis,
                         ))),
                 GridColumn(
-                    columnName: 'date',
+                    columnName: 'creatat',
                     allowFiltering: false,
-                    allowSorting: false,
+                    allowSorting: true,
                     label: Container(
                         padding: EdgeInsets.symmetric(horizontal: 16.0),
                         alignment: Alignment.centerLeft,
@@ -297,23 +300,100 @@ height: 60,
                           overflow: TextOverflow.ellipsis,
                         ))),
                 GridColumn(
-                    columnName: 'date2',
+                    columnName: 'obra',
                     allowFiltering: false,
                     allowSorting: false,
                     label: Container(
                         padding: EdgeInsets.symmetric(horizontal: 16.0),
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Fecha2',
+                          'Proyecto',
+                          overflow: TextOverflow.ellipsis,
+                        ))),
+                GridColumn(
+                    columnName: 'horain',
+                    allowFiltering: false,
+                    allowSorting: false,
+                    label: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Ingreso',
+                          overflow: TextOverflow.ellipsis,
+                        ))),
+                GridColumn(
+                    columnName: 'horaout',
+                    allowFiltering: false,
+                    allowSorting: false,
+                    label: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Salida',
+                          overflow: TextOverflow.ellipsis,
+                        ))),
+                GridColumn(
+                    columnName: 'obra2',
+                    allowFiltering: false,
+                    allowSorting: false,
+                    label: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Proyecto',
+                          overflow: TextOverflow.ellipsis,
+                        ))),
+                GridColumn(
+                    columnName: 'horain2',
+                    allowFiltering: false,
+                    allowSorting: false,
+                    label: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Ingreso',
+                          overflow: TextOverflow.ellipsis,
+                        ))),
+                GridColumn(
+                    columnName: 'horaout2',
+                    allowFiltering: false,
+                    allowSorting: false,
+                    label: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Salida',
+                          overflow: TextOverflow.ellipsis,
+                        ))),
+                GridColumn(
+                    columnName: 'totalhoras2',
+                    allowFiltering: false,
+                    allowSorting: false,
+                    label: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'THoras',
                           overflow: TextOverflow.ellipsis,
                         ))),
               ],
               stackedHeaderRows: <StackedHeaderRow>[
                 StackedHeaderRow(cells: [
                   StackedHeaderCell(
-                      columnNames: ['id', 'name','date'  , 'date2'],
+                      columnNames: [
+                        'id',
+                        'fecha',
+                        'creatat',
+                        'obra',
+                        'horain',
+                        'horaout',
+                        'obra2',
+                        'horain2',
+                        'horaout2',
+                        'totalhoras2'
+                      ],
                       child: Container(
-                         // color: Colors.cyan[200],
+                          // color: Colors.cyan[200],
                           child: const Center(
                               child: Text('NOMINA DE ASISTENCIA')))),
                 ])
@@ -331,9 +411,33 @@ class EmployeeDataSource extends DataGridSource {
     _employeeData = employeeData
         .map<DataGridRow>((e) => DataGridRow(cells: [
               DataGridCell<String>(columnName: 'id', value: e.id),
-              DataGridCell<String>(columnName: 'name', value: e.name),
-              DataGridCell<String>(columnName: 'date', value: e.date),
-              DataGridCell<String>(columnName: 'date2', value: DateFormat('MMMM yyyy','en_US').format(e.date2 as DateTime) )
+              DataGridCell<String>(
+                  columnName: 'fecha', value: e.fecha.toString().substring(3)),
+              DataGridCell<String>(
+                  columnName: 'creatat',
+                  value: e.creatat == null
+                      ? "--/--"
+                      : e.creatat.split('T')[0].toString()),
+              DataGridCell<String>(
+                  columnName: 'obra', value: e.obra == null ? "--/--" : e.obra),
+              DataGridCell<String>(
+                  columnName: 'horain',
+                  value: e.horain == null ? "--/--" : e.horain),
+              DataGridCell<String>(
+                  columnName: 'horaout',
+                  value: e.horaout == null ? "--/--" : e.horaout),
+              DataGridCell<String>(
+                  columnName: 'obra2',
+                  value: e.obra2 == null ? "--/--" : e.obra2),
+              DataGridCell<String>(
+                  columnName: 'horain2',
+                  value: e.horain2 == null ? "--/--" : e.horain2),
+              DataGridCell<String>(columnName: 'horaout2', value: e.horaout2),
+              DataGridCell<String>(
+                  columnName: 'totalhoras2',
+                  value: DateFormat("yyyy-MM-dd hh:mm:ss")
+                      .parse('2020-01-02 03:04:05')
+                      .toString())
             ]))
         .toList();
   }
@@ -358,16 +462,15 @@ class EmployeeDataSource extends DataGridSource {
 
 class Employee {
   /// Creates the employee class with required details.
-  Employee(this.id, this.name, this.date , this.date2);
-
-  /// Id of an employee.
+  Employee(this.id, this.fecha, this.creatat, this.obra, this.horain,
+      this.horaout, this.obra2, this.horain2, this.horaout2);
   final String id;
-
-  /// Name of an employee.
-  final String name;
-
-  /// Designation of an employee.
-  final String date;
-
-  final String date2;
+  final String fecha;
+  final String creatat;
+  final String obra;
+  final String horain;
+  final String horaout;
+  final String obra2;
+  final String horain2;
+  final String horaout2;
 }
