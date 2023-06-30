@@ -1,6 +1,5 @@
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:employee_attendance/constants/constants.dart';
-import 'package:employee_attendance/services/attendance_service.dart';
 import 'package:employee_attendance/services/db_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -87,7 +86,7 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
 
     // Using below conditions because build can be called multiple times
     dbService.allempleados.isEmpty ? dbService.getAllempleados() : null;
-    final attendanceService = route.Provider.of<AttendanceService>(context);
+    //final attendanceService = route.Provider.of<AttendanceService>(context);
     return Scaffold(
         appBar: AppBar(
           leading: Builder(builder: (BuildContext context) {
@@ -411,33 +410,19 @@ class EmployeeDataSource extends DataGridSource {
     _employeeData = employeeData
         .map<DataGridRow>((e) => DataGridRow(cells: [
               DataGridCell<String>(columnName: 'id', value: e.id),
-              DataGridCell<String>(
-                  columnName: 'fecha', value: e.fecha.toString().substring(3)),
-              DataGridCell<String>(
-                  columnName: 'creatat',
-                  value: e.creatat == null
-                      ? "--/--"
-                      : e.creatat.split('T')[0].toString()),
-              DataGridCell<String>(
-                  columnName: 'obra', value: e.obra == null ? "--/--" : e.obra),
-              DataGridCell<String>(
-                  columnName: 'horain',
-                  value: e.horain == null ? "--/--" : e.horain),
-              DataGridCell<String>(
-                  columnName: 'horaout',
-                  value: e.horaout == null ? "--/--" : e.horaout),
-              DataGridCell<String>(
-                  columnName: 'obra2',
-                  value: e.obra2 == null ? "--/--" : e.obra2),
-              DataGridCell<String>(
-                  columnName: 'horain2',
-                  value: e.horain2 == null ? "--/--" : e.horain2),
+              DataGridCell<String>(columnName: 'fecha', value: e.fecha.toString().substring(3)),
+              DataGridCell<String>(columnName: 'creatat',value: e.creatat.split('T')[0].toString()),
+              DataGridCell<String>(columnName: 'obra', value: e.obra),
+              DataGridCell<String>(columnName: 'horain', value: e.horain),
+              DataGridCell<String>(columnName: 'horaout', value: e.horaout),
+              DataGridCell<String>(columnName: 'obra2', value: e.obra2),
+              DataGridCell<String>(columnName: 'horain2', value: e.horain2),
               DataGridCell<String>(columnName: 'horaout2', value: e.horaout2),
               DataGridCell<String>(
                   columnName: 'totalhoras2',
-                  value: DateFormat("yyyy-MM-dd hh:mm:ss")
-                      .parse('2020-01-02 03:04:05')
-                      .toString())
+                  value: DateFormat.Hm().format(
+                      DateFormat("yyyy-MM-dd hh:mm:ss")
+                          .parse('2020-01-02 03:04:05')))
             ]))
         .toList();
   }
@@ -464,6 +449,7 @@ class Employee {
   /// Creates the employee class with required details.
   Employee(this.id, this.fecha, this.creatat, this.obra, this.horain,
       this.horaout, this.obra2, this.horain2, this.horaout2);
+
   final String id;
   final String fecha;
   final String creatat;
