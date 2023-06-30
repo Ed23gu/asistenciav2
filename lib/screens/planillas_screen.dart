@@ -9,6 +9,8 @@ import 'package:employee_attendance/models/user_model.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../services/attendance_service.dart';
+
 class PlanillaScreen extends StatefulWidget {
   const PlanillaScreen({super.key});
 
@@ -21,17 +23,7 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
   late final bool allowFiltering;
   late var fecha = '';
   int selectedOption = 246; // Opción seleccionada inicialmente
-  List<int> options = [
-    246,
-    2,
-    3,
-    4,
-    247,
-    253,
-    249,
-    248,
-    250,
-  ];
+
   late EmployeeDataSource _employeeDataSource =
       EmployeeDataSource(employeeData: []);
   List<Employee> _employees = <Employee>[];
@@ -42,7 +34,6 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
     getEmployeeDataFromSupabase().then((employeeList) {
       setState(() {
         _employees = employeeList;
-        print(_employees);
         _employeeDataSource = EmployeeDataSource(employeeData: _employees);
       });
     });
@@ -62,13 +53,15 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
                 e['date'].toString(),
                 e['created_at'].toString(),
                 e['obraid'].toString(),
-                e['check_in'].toString(),
-                e['check_out'].toString(),
+                e['check_in'].toString() != "null" ? e['check_in'] : "null",
+                // e['check_in'].toString() != "null" ? e['check_in'] : "00:00",
+                e['check_out'].toString() != "null" ? e['check_out'] : "null",
                 e['obraid2'].toString(),
-                e['check_in2'].toString(),
-                e['check_out2'].toString()))
+                e['check_in2'].toString() != "null" ? e['check_in2'] : "null",
+                e['check_out2'].toString() != "null"
+                    ? e['check_out2']
+                    : "null"))
             .toList();
-        print(employeeList);
         return employeeList;
       } else {
         throw Exception('Error al obtener los datos de empleados');
@@ -86,7 +79,9 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
 
     // Using below conditions because build can be called multiple times
     dbService.allempleados.isEmpty ? dbService.getAllempleados() : null;
-    //final attendanceService = route.Provider.of<AttendanceService>(context);
+    final attendanceService = route.Provider.of<AttendanceService>(context);
+
+
     return Scaffold(
         appBar: AppBar(
           leading: Builder(builder: (BuildContext context) {
@@ -332,6 +327,17 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
                           overflow: TextOverflow.ellipsis,
                         ))),
                 GridColumn(
+                    columnName: 'subhoras',
+                    allowFiltering: false,
+                    allowSorting: false,
+                    label: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'subHoras',
+                          overflow: TextOverflow.ellipsis,
+                        ))),
+                GridColumn(
                     columnName: 'obra2',
                     allowFiltering: false,
                     allowSorting: false,
@@ -365,14 +371,25 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
                           overflow: TextOverflow.ellipsis,
                         ))),
                 GridColumn(
-                    columnName: 'totalhoras2',
+                    columnName: 'subhoras2',
                     allowFiltering: false,
                     allowSorting: false,
                     label: Container(
                         padding: EdgeInsets.symmetric(horizontal: 16.0),
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'THoras',
+                          'subHoras',
+                          overflow: TextOverflow.ellipsis,
+                        ))),
+                GridColumn(
+                    columnName: 'totalhoras',
+                    allowFiltering: false,
+                    allowSorting: false,
+                    label: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Total Horas',
                           overflow: TextOverflow.ellipsis,
                         ))),
               ],
@@ -386,10 +403,12 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
                         'obra',
                         'horain',
                         'horaout',
+                        'subhoras',
                         'obra2',
                         'horain2',
                         'horaout2',
-                        'totalhoras2'
+                        'subhoras2',
+                        'totalhoras'
                       ],
                       child: Container(
                           // color: Colors.cyan[200],
@@ -409,20 +428,44 @@ class EmployeeDataSource extends DataGridSource {
   EmployeeDataSource({required List<Employee> employeeData}) {
     _employeeData = employeeData
         .map<DataGridRow>((e) => DataGridRow(cells: [
+
               DataGridCell<String>(columnName: 'id', value: e.id),
-              DataGridCell<String>(columnName: 'fecha', value: e.fecha.toString().substring(3)),
-              DataGridCell<String>(columnName: 'creatat',value: e.creatat.split('T')[0].toString()),
+              DataGridCell<String>(
+                  columnName: 'fecha', value: e.fecha.toString().substring(3)),
+              DataGridCell<String>(
+                  columnName: 'creatat',
+                  value: e.creatat.split('T')[0].toString()),
               DataGridCell<String>(columnName: 'obra', value: e.obra),
               DataGridCell<String>(columnName: 'horain', value: e.horain),
               DataGridCell<String>(columnName: 'horaout', value: e.horaout),
+      DataGridCell<String>(
+          columnName: 'subhoras',
+          value: (e.horain == "null" || e.horaout == "null")
+              ? "00:00"
+              : Tiempo(e.horaout, e.horain).obtenerDiferenciaTiempo().toString()
+      ),
               DataGridCell<String>(columnName: 'obra2', value: e.obra2),
               DataGridCell<String>(columnName: 'horain2', value: e.horain2),
               DataGridCell<String>(columnName: 'horaout2', value: e.horaout2),
+
               DataGridCell<String>(
-                  columnName: 'totalhoras2',
-                  value: DateFormat.Hm().format(
-                      DateFormat("yyyy-MM-dd hh:mm:ss")
-                          .parse('2020-01-02 03:04:05')))
+                  columnName: 'subhoras2',
+                  value: (e.horain2 == "null" || e.horaout2 == "null")
+                      ? "00:00"
+                      :  Tiempo(e.horaout2, e.horain2).obtenerDiferenciaTiempo().toString()
+                 /* (DateFormat.Hm()
+                          .format(DateFormat("hh:mm").parse(e.horaout2))).difference(DateFormat.Hm()
+                      .format(DateFormat("hh:mm").parse(e.horain2))))*/
+    ),
+      DataGridCell<String>(
+          columnName: 'totalhoras',
+          value: (e.horain == "null" ||  e.horaout == "null" ) ? "null" && e.horain2 == "null" || e.horaout2 == "null"
+              ? "--/--"
+              :  Tiempo2( e.horaout, e.horain, e.horaout2, e.horain2).obtenerSumadeTiempo().toString()
+        /* (DateFormat.Hm()
+                          .format(DateFormat("hh:mm").parse(e.horaout2))).difference(DateFormat.Hm()
+                      .format(DateFormat("hh:mm").parse(e.horain2))))*/
+      )
             ]))
         .toList();
   }
@@ -444,7 +487,51 @@ class EmployeeDataSource extends DataGridSource {
     }).toList());
   }
 }
+class Tiempo {
+  String horaOut;
+  String horaIn;
 
+  Tiempo(this.horaOut, this.horaIn);
+
+  String obtenerDiferenciaTiempo() {
+    DateTime horaOutDateTime = DateFormat('HH:mm').parse(horaOut);
+    DateTime horaInDateTime = DateFormat('HH:mm').parse(horaIn);
+    Duration diferenciaTiempo = horaOutDateTime.difference(horaInDateTime);
+    String horas = '${diferenciaTiempo.inHours}';
+    String minutos = '${diferenciaTiempo.inMinutes.remainder(60).toString().padLeft(2, '0')}';
+String resultado =  horas +":" + minutos;
+    return resultado;
+  }
+}
+
+class Tiempo2 {
+  String horaOut;
+  String horaIn;
+  String horaOut2;
+  String horaIn2;
+
+  Tiempo2(this.horaOut, this.horaIn, this.horaOut2, this.horaIn2);
+
+  String obtenerSumadeTiempo() {
+    DateTime horaOutDateTime = DateFormat('HH:mm').parse(horaOut);
+    DateTime horaInDateTime = DateFormat('HH:mm').parse(horaIn);
+    DateTime horaOutDateTime2 = DateFormat('HH:mm').parse(horaOut2);
+    DateTime horaInDateTime2 = DateFormat('HH:mm').parse(horaIn2);
+    Duration diferenciaTiempo = horaOutDateTime.difference(horaInDateTime);
+    Duration diferenciaTiempo2 = horaOutDateTime2.difference(horaInDateTime2);
+    Duration sumaHoras = diferenciaTiempo + diferenciaTiempo2 ;
+    String sumahoras = '${sumaHoras.inHours}';
+    String sumaminutos = '${sumaHoras.inMinutes.remainder(60).toString().padLeft(2, '0')}';
+    String resultado =  sumahoras +":" + sumaminutos;
+
+    print (sumaHoras);
+    print (sumahoras);
+    print (sumaminutos);
+
+    return resultado;
+
+  }
+}
 class Employee {
   /// Creates the employee class with required details.
   Employee(this.id, this.fecha, this.creatat, this.obra, this.horain,
