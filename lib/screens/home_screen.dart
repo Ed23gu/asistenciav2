@@ -34,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
         decoration: BoxDecoration(
             color: Theme.of(context).brightness == Brightness.light
                 ? Colors.white
-                //  color: Colors.white,
+            //  color: Colors.white,
                 : Color.fromARGB(255, 43, 41, 41),
             borderRadius: BorderRadius.all(Radius.circular(20)),
             boxShadow: [
@@ -61,9 +61,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: i == currentIndex
                             ? Colors.blue
                             : (Theme.of(context).brightness == Brightness.light
-                                ? Colors.black
-                                //  color: Colors.white,
-                                : Colors.white),
+                            ? Colors.black
+                        //  color: Colors.white,
+                            : Colors.white),
                         size: i == currentIndex ? 30 : 26,
                       ),
                     ),
