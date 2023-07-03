@@ -1,5 +1,5 @@
 import 'dart:math';
-
+import 'package:syncfusion_flutter_datagrid_export/export.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:employee_attendance/constants/constants.dart';
 import 'package:employee_attendance/services/db_service.dart';
@@ -31,7 +31,7 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
   late EmployeeDataSource _employeeDataSource =
   EmployeeDataSource(employeeData: []);
   List<Employee> _employees = <Employee>[];
-
+  final GlobalKey<SfDataGridState> _key = GlobalKey<SfDataGridState>();
   @override
   void initState() {
     super.initState();
@@ -95,14 +95,14 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
           }),
           title: Text(
             "ArtConsGroup",
-            style: TextStyle(fontSize: 20),
+            style: TextStyle(fontSize: 17),
           ),
           actions: [
             Row(
               children: [
                 Icon(
                   Icons.brightness_2_outlined,
-                  size: 20, // Icono para tema claro
+                  size:17, // Icono para tema claro
                   color:
                   AdaptiveTheme.of(context).mode == AdaptiveThemeMode.light
                       ? Colors.grey
@@ -131,56 +131,57 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
           ],
         ),
         body: Column(
+
           children: [
+
             Container(
-              alignment: Alignment.centerLeft,
+              alignment: Alignment.center,
               margin: const EdgeInsets.only(left: 20, top: 15, bottom: 5),
               child: const Text(
                 "Resumen de Asistencias",
                 style: TextStyle(fontSize: 17),
               ),
             ),
-            dbService.allempleados.isEmpty
-                ? const LinearProgressIndicator()
-                : Container(
-              //  padding: EdgeInsets.all(5),
-              margin: const EdgeInsets.only(
-                  left: 10, top: 5, bottom: 10, right: 10),
-              height: 60,
-              width: double.infinity,
-              child: DropdownButtonFormField(
-                decoration:
-                const InputDecoration(border: OutlineInputBorder()),
-                value: dbService.empleadolista ??
-                    dbService.allempleados.first.id,
-                items: dbService.allempleados.map((UserModel item) {
-                  return DropdownMenuItem(
-                    value: item.id,
-                    child: Text(
-                      item.name.toString(),
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  );
-                }).toList(),
-                onChanged: (selectedValue) {
-                  setState(() {
-                    dbService.empleadolista = selectedValue.toString();
-                    _employeeDataSource.clearFilters();
-                    _employeeDataSource.addFilter(
-                        'id',
-                        FilterCondition(
-                            type: FilterType.equals,
-                            value: dbService.empleadolista));
-                    // filterData(); // Volver a filtrar los datos cuando se selecciona una opción nueva
-                  });
-                },
-              ),
-            ),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Container(
-                  width: 10,
+                dbService.allempleados.isEmpty
+                    ? SizedBox( width:60,
+                    child: const LinearProgressIndicator())
+                    : Container(
+                  //  padding: EdgeInsets.all(5),
+                  margin: const EdgeInsets.only(
+                      left: 5, top: 5, bottom: 10, right: 10),
+                  height: 45,
+                  width: 300,
+                  child: DropdownButtonFormField(
+                    decoration:
+                    const InputDecoration(border: OutlineInputBorder()),
+                    value: dbService.empleadolista ??
+                        dbService.allempleados.first.id,
+                    items: dbService.allempleados.map((UserModel item) {
+                      return DropdownMenuItem(
+                        value: item.id,
+                        child: Text(
+                          item.name.toString(),
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (selectedValue) {
+                      setState(() {
+                        dbService.empleadolista = selectedValue.toString();
+                        _employeeDataSource.clearFilters();
+                        _employeeDataSource.addFilter(
+                            'id',
+                            FilterCondition(
+                                type: FilterType.equals,
+                                value: dbService.empleadolista));
+                        // filterData(); // Volver a filtrar los datos cuando se selecciona una opción nueva
+                      });
+                    },
+                  ),
                 ),
                 OutlinedButton(
                     onPressed: () async {
@@ -211,70 +212,52 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
                       });
                     },
                     child: const Text("Mes",
-                        style: const TextStyle(fontSize: 15))),
-                Container(
-                  width: 10,
+                        style: const TextStyle(fontSize: 15))
                 ),
                 Text(
                   fecha,
-                  style: const TextStyle(fontSize: 18),
+                  style: const TextStyle(fontSize: 15),
                 ),
-                MaterialButton(
-                    child: Text('fechass'),
-                    onPressed: () {
-                      _employeeDataSource.addFilter(
-                        'Fecha2',
-                        FilterCondition(
-                          value: fecha,
-                          type: FilterType.contains,
-                          filterBehavior: FilterBehavior.stringDataType,
-                        ),
-                      );
-                    }),
                 MaterialButton(
                     child: Text('Clear Filters'),
                     onPressed: () {
                       _employeeDataSource.clearFilters();
                     }),
+                Text(dbService.empleadolista == null
+                    ? "-"
+                    : dbService.empleadolista!),
               ],
             ),
-            Text(dbService.empleadolista == null
-                ? "-"
-                : dbService.empleadolista!),
-            Row(
-              children: [
-                Container(
-                  height: 10,
-                )
-              ],
-            ),
-            SfDataGridTheme(
-              data: SfDataGridThemeData(),
+
+          Expanded(child: SfDataGridTheme(
+            data: SfDataGridThemeData(),
             child: SfDataGrid(
               source: _employeeDataSource,
-                tableSummaryRows: [
-                  GridTableSummaryRow(
-                      showSummaryInRow: false,
-                      title: 'Total de dias trabajados: {Count}',
-                      titleColumnSpan: 3,
-                      columns: [
-                        GridSummaryColumn(
-                            name: 'Count',
-                            columnName: 'id',
-                            summaryType: GridSummaryType.count),
-                      ],
-                      position: GridTableSummaryRowPosition.bottom),
-                  GridTableSummaryRow(
-                      showSummaryInRow: true,
-                      title: 'SUMA {Count2}',
-                      titleColumnSpan: 3,
-                      columns: [
-                        GridSummaryColumn(
-                            name: 'Count2',
-                            columnName: 'obra2',
-                            summaryType: GridSummaryType.sum),
-                      ],
-                      position: GridTableSummaryRowPosition.bottom),
+              rowHeight: 45,
+              headerRowHeight: 30,
+              tableSummaryRows: [
+                GridTableSummaryRow(
+                    showSummaryInRow: false,
+                    title: 'Total de dias trabajados: {Count}',
+                    titleColumnSpan: 3,
+                    columns: [
+                      GridSummaryColumn(
+                          name: 'Count',
+                          columnName: 'fecha',
+                          summaryType: GridSummaryType.count),
+                    ],
+                    position: GridTableSummaryRowPosition.bottom),
+                GridTableSummaryRow(
+                    showSummaryInRow: true,
+                    title: 'SUMA {Count2}',
+                    titleColumnSpan: 3,
+                    columns: [
+                      GridSummaryColumn(
+                          name: 'Count2',
+                          columnName: 'obra2',
+                          summaryType: GridSummaryType.sum),
+                    ],
+                    position: GridTableSummaryRowPosition.bottom),
 
               ],
 
@@ -285,12 +268,6 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
               //columnWidthMode: ColumnWidthMode.auto,
               //  gridLinesVisibility: GridLinesVisibility.both,
               headerGridLinesVisibility: GridLinesVisibility.both,
-              onFilterChanging: (DataGridFilterChangeDetails details) {
-                if (details.column.columnName == 'creatat') {
-                  return false;
-                }
-                return true;
-              },
               //allowTriStateSorting: true,
               columns: [
                 GridColumn(
@@ -450,13 +427,10 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
               ],
               selectionMode: SelectionMode.multiple,
             ),
-             )
+          ))
           ],
         ));
   }
-}
-
-class GridTableSummaryRow2 {
 }
 
 class EmployeeDataSource extends DataGridSource {
@@ -555,6 +529,7 @@ class EmployeeDataSource extends DataGridSource {
         }
       }
     }
+
     return title ?? '';
   }
 
@@ -585,8 +560,6 @@ class EmployeeDataSource extends DataGridSource {
         }).toList());
   }
 }
-
-
 class Tiempo {
   String horaOut;
   String horaIn;
