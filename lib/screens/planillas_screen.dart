@@ -1,8 +1,8 @@
 import 'dart:math';
-import 'package:syncfusion_flutter_datagrid_export/export.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:employee_attendance/constants/constants.dart';
 import 'package:employee_attendance/services/db_service.dart';
+import 'package:employee_attendance/services/attendance_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart' as route;
@@ -12,8 +12,11 @@ import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:syncfusion_flutter_core/theme.dart';
 import 'package:collection/collection.dart';
+import 'package:open_document/my_files/init.dart';
+import 'package:syncfusion_flutter_datagrid_export/export.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
+import 'package:employee_attendance/helper/save_file_mobile.dart' if (dart.library.html) 'package:employee_attendance/helper/save_file_web.dart' as helper;
 
-import '../services/attendance_service.dart';
 
 class PlanillaScreen extends StatefulWidget {
   const PlanillaScreen({super.key});
@@ -25,6 +28,9 @@ class PlanillaScreen extends StatefulWidget {
 class _PlanillaScreenState extends State<PlanillaScreen> {
   final SupabaseClient _supabase = Supabase.instance.client;
   late final bool allowFiltering;
+  String selectedName = '';
+  int? selectedpas;
+  String selectedProyecto = '';
   late var fecha = '';
   int selectedOption = 246; // Opción seleccionada inicialmente
 
@@ -32,6 +38,7 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
   EmployeeDataSource(employeeData: []);
   List<Employee> _employees = <Employee>[];
   final GlobalKey<SfDataGridState> _key = GlobalKey<SfDataGridState>();
+
   @override
   void initState() {
     super.initState();
@@ -39,10 +46,53 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
       setState(() {
         _employees = employeeList;
         _employeeDataSource = EmployeeDataSource(employeeData: _employees);
+
       });
     });
   }
+///////////////////
+  Future<void> _exportDataGridToPdf(String periodo , String nombre  ,String proyecto) async {
+    final PdfDocument document =
+    _key.currentState!.exportToPdfDocument(
+      excludeColumns: const <String>['id'],
+      exportTableSummaries: true,
+      exportStackedHeaders: true,
+      fitAllColumnsInOnePage: true,
+      headerFooterExport: (DataGridPdfHeaderFooterExportDetails headerFooterExport) {
+        final double width = headerFooterExport.pdfPage.getClientSize().width;
+        final PdfPageTemplateElement header = PdfPageTemplateElement(Rect.fromLTWH(0, 0, width, 65));
+        header.graphics.drawString(
+          '\n Proyecto: ' + proyecto,
+          PdfStandardFont(PdfFontFamily.helvetica, 11, style: PdfFontStyle.bold),
+          bounds: const Rect.fromLTWH(170, 25, 200, 60),
+        );
+        header.graphics.drawString(
+          '\n Periodo:' + periodo,
+         // '\n Fecha:' + DateFormat.yMMMd().format(DateTime.now()),
+          PdfStandardFont(PdfFontFamily.helvetica, 11, style: PdfFontStyle.bold),
+          bounds: const Rect.fromLTWH(400, 25, 200, 60),
+        );
+        header.graphics.drawString(
+          'REGISTRO DE ASISTENCIAS \n Nombre:' + nombre ,
+          PdfStandardFont(PdfFontFamily.helvetica, 11, style: PdfFontStyle.bold),
+          bounds: const Rect.fromLTWH(0, 25, 200, 60),
+        );
+        headerFooterExport.pdfDocumentTemplate.top = header;
+      },
+    );
+    PdfPage page = document.pages[0];
+    page.graphics.drawString(
+        '                 _____________________                  _____________________', PdfStandardFont(PdfFontFamily.helvetica, 12),
+        bounds: const Rect.fromLTWH(40, 650, 400, 30));
+    document.pageSettings.orientation = PdfPageOrientation.landscape;
+    final List<int> bytes = document.saveSync();
+    await helper.saveAndLaunchFile(bytes, 'DataGrid.pdf');
+    document.dispose();
+  }
 
+
+
+  //////////////////////////////
   Future<List<Employee>> getEmployeeDataFromSupabase() async {
     try {
       final response = await _supabase
@@ -60,7 +110,7 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
             e['check_in'].toString() != "null" ? e['check_in'] : "null",
             // e['check_in'].toString() != "null" ? e['check_in'] : "00:00",
             e['check_out'].toString() != "null" ? e['check_out'] : "null",
-            int.parse(e['obraid2'] ),
+            e['obraid2'].toString(),
             e['check_in2'].toString() != "null" ? e['check_in2'] : "null",
             e['check_out2'].toString() != "null"
                 ? e['check_out2']
@@ -78,13 +128,9 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dbService = route.Provider.of<DbService>(context);
-    //String idempleado = 'afebcc8c-9b68-4d49-83a5-ca67971eaedb';
-
-    // Using below conditions because build can be called multiple times
-    dbService.allempleados.isEmpty ? dbService.getAllempleados() : null;
     final attendanceService = route.Provider.of<AttendanceService>(context);
-
+    final dbService = route.Provider.of<DbService>(context);
+    dbService.allempleados.isEmpty ? dbService.getAllempleados() : null;
 
     return Scaffold(
         appBar: AppBar(
@@ -178,6 +224,12 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
                             FilterCondition(
                                 type: FilterType.equals,
                                 value: dbService.empleadolista));
+                        selectedName = dbService.allempleados.firstWhere(
+                                (element) => element.id == selectedValue).name.toString();
+                    selectedpas= dbService.allempleados.firstWhere(
+                                (element) => element.id == selectedValue).department;
+                        selectedProyecto = dbService.allDepartments.firstWhere(
+                                (element) => element.id == selectedpas).title;
                         // filterData(); // Volver a filtrar los datos cuando se selecciona una opción nueva
                       });
                     },
@@ -192,6 +244,7 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
                       DateFormat('MMMM yyyy').format(selectedDate);
                       setState(() {
                         fecha = pickedMonth;
+                        //attendanceService.attendanceHistoryMonth= fecha;
                         _employeeDataSource.clearFilters();
                         _employeeDataSource.addFilter(
                           'id',
@@ -202,7 +255,7 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
                           ),
                         );
                         _employeeDataSource.addFilter(
-                          'fecha',
+                          'Dia',
                           FilterCondition(
                             value: fecha,
                             filterOperator: FilterOperator.and,
@@ -218,216 +271,241 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
                   fecha,
                   style: const TextStyle(fontSize: 15),
                 ),
-                MaterialButton(
+              /*  MaterialButton(
                     child: Text('Clear Filters'),
                     onPressed: () {
                       _employeeDataSource.clearFilters();
-                    }),
+                    }),*/
                 Text(dbService.empleadolista == null
-                    ? "-"
-                    : dbService.empleadolista!),
+                    ? "Nombre no seleccionado"
+                    : "Nombre: "),
+                Text( selectedName),
+                Container(
+                  width: 10,
+                ),
+                Text("Proyecto: $selectedProyecto"),
+                Container(
+                  margin: const EdgeInsets.all(12.0),
+                  child: Row(
+                    children: <Widget>[
+                      const Padding(padding: EdgeInsets.all(20)),
+                      SizedBox(
+                        height: 40.0,
+                        width: 150.0,
+                        child: MaterialButton(
+                            color: Colors.blue,
+                            onPressed: () async { await _exportDataGridToPdf(attendanceService.attendanceHistoryMonth, selectedName,selectedProyecto);},
+                            child: const Center(
+                                child: Text(
+                                  'Exportar a PDF',
+                                  style: TextStyle(color: Colors.white),
+                                ))),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-
-          Expanded(child: SfDataGridTheme(
-            data: SfDataGridThemeData(),
-            child: SfDataGrid(
-              source: _employeeDataSource,
-              rowHeight: 45,
-              headerRowHeight: 30,
-              tableSummaryRows: [
-                GridTableSummaryRow(
-                    showSummaryInRow: false,
-                    title: 'Total de dias trabajados: {Count}',
-                    titleColumnSpan: 3,
-                    columns: [
-                      GridSummaryColumn(
-                          name: 'Count',
-                          columnName: 'fecha',
-                          summaryType: GridSummaryType.count),
-                    ],
-                    position: GridTableSummaryRowPosition.bottom),
-                GridTableSummaryRow(
-                    showSummaryInRow: true,
-                    title: 'SUMA {Count2}',
-                    titleColumnSpan: 3,
-                    columns: [
-                      GridSummaryColumn(
-                          name: 'Count2',
-                          columnName: 'obra2',
-                          summaryType: GridSummaryType.sum),
-                    ],
-                    position: GridTableSummaryRowPosition.bottom),
-
-              ],
-
-              columnWidthCalculationRange: ColumnWidthCalculationRange.allRows,
-              //allowFiltering: true,
-              allowSorting: true,
-              allowMultiColumnSorting: true,
-              //columnWidthMode: ColumnWidthMode.auto,
-              //  gridLinesVisibility: GridLinesVisibility.both,
-              headerGridLinesVisibility: GridLinesVisibility.both,
-              //allowTriStateSorting: true,
-              columns: [
-                GridColumn(
-                    columnName: 'id',
-                    visible: false,
-                    label: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'ID',
-                          overflow: TextOverflow.ellipsis,
-                        ))),
-                GridColumn(
-                    columnName: 'fecha',
-                    allowFiltering: false,
-                    allowSorting: false,
-                    label: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'fec',
-                          overflow: TextOverflow.ellipsis,
-                        ))),
-                GridColumn(
-                    columnName: 'creatat',
-                    allowFiltering: false,
-                    allowSorting: true,
-                    label: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Fecha',
-                          overflow: TextOverflow.ellipsis,
-                        ))),
-                GridColumn(
-                    columnName: 'obra',
-                    allowFiltering: false,
-                    allowSorting: false,
-                    label: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Proyecto',
-                          overflow: TextOverflow.ellipsis,
-                        ))),
-                GridColumn(
-                    columnName: 'horain',
-                    allowFiltering: false,
-                    allowSorting: false,
-                    label: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Ingreso',
-                          overflow: TextOverflow.ellipsis,
-                        ))),
-                GridColumn(
-                    columnName: 'horaout',
-                    allowFiltering: false,
-                    allowSorting: false,
-                    label: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Salida',
-                          overflow: TextOverflow.ellipsis,
-                        ))),
-                GridColumn(
-                    columnName: 'subhoras',
-                    allowFiltering: false,
-                    allowSorting: false,
-                    label: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'subHoras',
-                          overflow: TextOverflow.ellipsis,
-                        ))),
-                GridColumn(
-                    columnName: 'obra2',
-                    allowFiltering: false,
-                    allowSorting: false,
-                    label: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Proyecto',
-                          overflow: TextOverflow.ellipsis,
-                        ))),
-                GridColumn(
-                    columnName: 'horain2',
-                    allowFiltering: false,
-                    allowSorting: false,
-                    label: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Ingreso',
-                          overflow: TextOverflow.ellipsis,
-                        ))),
-                GridColumn(
-                    columnName: 'horaout2',
-                    allowFiltering: false,
-                    allowSorting: false,
-                    label: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Salida',
-                          overflow: TextOverflow.ellipsis,
-                        ))),
-                GridColumn(
-                    columnName: 'subhoras2',
-                    allowFiltering: false,
-                    allowSorting: false,
-                    label: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'subHoras',
-                          overflow: TextOverflow.ellipsis,
-                        ))),
-                GridColumn(
-                    columnName: 'totalhoras',
-                    allowFiltering: false,
-                    allowSorting: false,
-                    label: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Total Horas',
-                          overflow: TextOverflow.ellipsis,
-                        ))),
-              ],
-              stackedHeaderRows: <StackedHeaderRow>[
-                StackedHeaderRow(cells: [
-                  StackedHeaderCell(
-                      columnNames: [
-                        'id',
-                        'fecha',
-                        'creatat',
-                        'obra',
-                        'horain',
-                        'horaout',
-                        'subhoras',
-                        'obra2',
-                        'horain2',
-                        'horaout2',
-                        'subhoras2',
-                        'totalhoras'
+            Expanded(child: SfDataGridTheme(
+              data: SfDataGridThemeData(),
+              child: SfDataGrid(
+                key: _key,
+                source: _employeeDataSource,
+                rowHeight: 45,
+                headerRowHeight: 30,
+                tableSummaryRows: [
+                  GridTableSummaryRow(
+                      showSummaryInRow: false,
+                      title: 'Total de dias trabajados: {Count}',
+                      titleColumnSpan: 6,
+                      columns: [
+                        GridSummaryColumn(
+                            name: 'Count',
+                            columnName: 'dia',
+                            summaryType: GridSummaryType.count),
                       ],
-                      child: Container(
-                        // color: Colors.cyan[200],
-                          child: const Center(
-                              child: Text('NOMINA DE ASISTENCIA')))),
-                ])
-              ],
-              selectionMode: SelectionMode.multiple,
-            ),
-          ))
+                      position: GridTableSummaryRowPosition.bottom),
+                  GridTableSummaryRow(
+                      showSummaryInRow: true,
+                      title: 'SUMA {Count2} ',
+                      titleColumnSpan: 6,
+                      columns: [
+                        GridSummaryColumn(
+                            name: 'Count2',
+                            columnName: 'Proyecto2',
+                            summaryType: GridSummaryType.count),
+                      ],
+                      position: GridTableSummaryRowPosition.bottom),
+
+                ],
+
+                columnWidthCalculationRange: ColumnWidthCalculationRange.allRows,
+                //allowFiltering: true,
+                allowSorting: true,
+                allowMultiColumnSorting: true,
+                //columnWidthMode: ColumnWidthMode.auto,
+                //  gridLinesVisibility: GridLinesVisibility.both,
+                headerGridLinesVisibility: GridLinesVisibility.both,
+                //allowTriStateSorting: true,
+                columns: [
+                  GridColumn(
+                      columnName: 'id',
+                      visible: false,
+                      label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'ID',
+                            overflow: TextOverflow.ellipsis,
+                          ))),
+                  GridColumn(
+                      columnName: 'Dia',
+                      allowFiltering: false,
+                      allowSorting: false,
+                      label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'fec',
+                            overflow: TextOverflow.ellipsis,
+                          ))),
+                  GridColumn(
+                      columnName: 'Fecha',
+                      allowFiltering: false,
+                      allowSorting: true,
+                      label: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Fecha',
+                            overflow: TextOverflow.ellipsis,
+                          ))),
+                  GridColumn(
+                      columnName: 'Proyecto',
+                      allowFiltering: false,
+                      allowSorting: false,
+                      label: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Proyecto',
+                            overflow: TextOverflow.ellipsis,
+                          ))),
+                  GridColumn(
+                      columnName: 'HoraIn',
+                      allowFiltering: false,
+                      allowSorting: false,
+                      label: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Ingreso',
+                            overflow: TextOverflow.ellipsis,
+                          ))),
+                  GridColumn(
+                      columnName: 'HoraOut',
+                      allowFiltering: false,
+                      allowSorting: false,
+                      label: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Salida',
+                            overflow: TextOverflow.ellipsis,
+                          ))),
+                  GridColumn(
+                      columnName: 'SuTotalH1',
+                      allowFiltering: false,
+                      allowSorting: false,
+                      label: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'subHoras',
+                            overflow: TextOverflow.ellipsis,
+                          ))),
+                  GridColumn(
+                      columnName: 'Proyecto2',
+                      allowFiltering: false,
+                      allowSorting: false,
+                      label: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Proyecto',
+                            overflow: TextOverflow.ellipsis,
+                          ))),
+                  GridColumn(
+                      columnName: 'HoraIn2',
+                      allowFiltering: false,
+                      allowSorting: false,
+                      label: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Ingreso',
+                            overflow: TextOverflow.ellipsis,
+                          ))),
+                  GridColumn(
+                      columnName: 'HoraOut2',
+                      allowFiltering: false,
+                      allowSorting: false,
+                      label: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Salida',
+                            overflow: TextOverflow.ellipsis,
+                          ))),
+                  GridColumn(
+                      columnName: 'SuTotalH2',
+                      allowFiltering: false,
+                      allowSorting: false,
+                      label: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'subHoras',
+                            overflow: TextOverflow.ellipsis,
+                          ))),
+                  GridColumn(
+                      columnName: 'TotalHoras',
+                      allowFiltering: false,
+                      allowSorting: false,
+                      label: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Total Horas',
+                            overflow: TextOverflow.ellipsis,
+                          ))),
+                ],
+                stackedHeaderRows: <StackedHeaderRow>[
+                  StackedHeaderRow(cells: [
+                    StackedHeaderCell(
+                        columnNames: [
+                          'id',
+                          'Dia',
+                          'Fecha',
+                          'Proyecto',
+                          'HoraIn',
+                          'HoraOut',
+                          'SuTotalH1',
+                          'Proyecto2',
+                          'HoraIn2',
+                          'HoraOut2',
+                          'SuTotalH2',
+                          'TotalHoras'
+                        ],
+                        child: Container(
+                          // color: Colors.cyan[200],
+                            child: const Center(
+                                child: Text('NOMINA DE ASISTENCIA')))),
+                  ])
+                ],
+                selectionMode: SelectionMode.multiple,
+              ),
+            ))
           ],
         ));
   }
@@ -435,18 +513,18 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
 
 class EmployeeDataSource extends DataGridSource {
   /// Creates the employee data source class with required details.
-  String obtenerSumaDeTiempo(String horaout, String horain, String horaout2, String horain2) {
-    if (horain == "null" || horaout == "null") {
-      if (horain2 == "null" || horaout2 == "null") {
+  String obtenerSumaDeTiempo(String HoraOut, String HoraIn, String HoraOut2, String HoraIn2) {
+    if (HoraIn == "null" || HoraOut == "null") {
+      if (HoraIn2 == "null" || HoraOut2 == "null") {
         return Tiempo2('00:00', '00:00', '00:00', '00:00').obtenerSumadeTiempo().toString();
       } else {
-        return Tiempo2('00:00', '00:00', horaout2, horain2).obtenerSumadeTiempo().toString();
+        return Tiempo2('00:00', '00:00', HoraOut2, HoraIn2).obtenerSumadeTiempo().toString();
       }
     } else {
-      if (horain2 == "null" || horaout2 == "null") {
-        return Tiempo2(horaout, horain, '00:00', '00:00').obtenerSumadeTiempo().toString();
+      if (HoraIn2 == "null" || HoraOut2 == "null") {
+        return Tiempo2(HoraOut, HoraIn, '00:00', '00:00').obtenerSumadeTiempo().toString();
       } else {
-        return Tiempo2(horaout, horain, horaout2, horain2).obtenerSumadeTiempo().toString();
+        return Tiempo2(HoraOut, HoraIn, HoraOut2, HoraIn2).obtenerSumadeTiempo().toString();
       }
     }
   }
@@ -455,35 +533,35 @@ class EmployeeDataSource extends DataGridSource {
         .map<DataGridRow>((e) => DataGridRow(cells: [
       DataGridCell<String>(columnName: 'id', value: e.id),
       DataGridCell<String>(
-          columnName: 'fecha', value: e.fecha.toString().substring(3)),
+          columnName: 'Dia', value: e.Dia.toString().substring(3)),
       DataGridCell<String>(
-          columnName: 'creatat',
-          value: e.creatat.split('T')[0].toString()),
-      DataGridCell<String>(columnName: 'obra', value: e.obra),
-      DataGridCell<String>(columnName: 'horain', value: e.horain),
-      DataGridCell<String>(columnName: 'horaout', value: e.horaout),
+          columnName: 'Fecha',
+          value: e.Fecha.split('T')[0].toString()),
+      DataGridCell<String>(columnName: 'Proyecto', value: e.Proyecto),
+      DataGridCell<String>(columnName: 'HoraIn', value: e.HoraIn),
+      DataGridCell<String>(columnName: 'HoraOut', value: e.HoraOut),
       DataGridCell<String>(
-          columnName: 'subhoras',
-          value: (e.horain == "null" || e.horaout == "null")
+          columnName: 'SuTotalH1',
+          value: (e.HoraIn == "null" || e.HoraOut == "null")
               ? "00:00"
-              : Tiempo(e.horaout, e.horain).obtenerDiferenciaTiempo().toString()
+              : Tiempo(e.HoraOut, e.HoraIn).obtenerDiferenciaTiempo().toString()
       ),
-      DataGridCell<int>(columnName: 'obra2', value: e.obra2),
-      DataGridCell<String>(columnName: 'horain2', value: e.horain2),
-      DataGridCell<String>(columnName: 'horaout2', value: e.horaout2),
+      DataGridCell<String>(columnName: 'Proyecto2', value: e.Proyecto2),
+      DataGridCell<String>(columnName: 'HoraIn2', value: e.HoraIn2),
+      DataGridCell<String>(columnName: 'HoraOut2', value: e.HoraOut2),
 
       DataGridCell<String>(
-          columnName: 'subhoras2',
-          value: (e.horain2 == "null" || e.horaout2 == "null")
+          columnName: 'SuTotalH2',
+          value: (e.HoraIn2 == "null" || e.HoraOut2 == "null")
               ? "00:00"
-              :  Tiempo(e.horaout2, e.horain2).obtenerDiferenciaTiempo().toString()
+              :  Tiempo(e.HoraOut2, e.HoraIn2).obtenerDiferenciaTiempo().toString()
       ),
       DataGridCell<String>(
-          columnName: 'totalhoras',
-          value: obtenerSumaDeTiempo(e.horaout, e.horain,e.horaout2, e.horain2)
+          columnName: 'TotalHoras',
+          value: obtenerSumaDeTiempo(e.HoraOut, e.HoraIn,e.HoraOut2, e.HoraIn2)
         /* (DateFormat.Hm()
-                          .format(DateFormat("hh:mm").parse(e.horaout2))).difference(DateFormat.Hm()
-                      .format(DateFormat("hh:mm").parse(e.horain2))))*/
+                          .format(DateFormat("hh:mm").parse(e.HoraOut2))).difference(DateFormat.Hm()
+                      .format(DateFormat("hh:mm").parse(e.HoraIn2))))*/
       )
     ]))
         .toList();
@@ -495,7 +573,7 @@ class EmployeeDataSource extends DataGridSource {
   @override
   List<DataGridRow> get rows => _employeeData;
 
-  @override
+/*  @override
   String calculateSummaryValue(GridTableSummaryRow summaryRow,
       GridSummaryColumn? summaryColumn, RowColumnIndex rowColumnIndex) {
     List<int> getCellValues(GridSummaryColumn summaryColumn) {
@@ -531,7 +609,7 @@ class EmployeeDataSource extends DataGridSource {
     }
 
     return title ?? '';
-  }
+  }*/
 
   @override
   Widget? buildTableSummaryCellWidget(
@@ -609,16 +687,16 @@ class Tiempo2 {
 }
 class Employee {
   /// Creates the employee class with required details.
-  Employee(this.id, this.fecha, this.creatat, this.obra, this.horain,
-      this.horaout, this.obra2, this.horain2, this.horaout2);
+  Employee(this.id, this.Dia, this.Fecha, this.Proyecto, this.HoraIn,
+      this.HoraOut, this.Proyecto2, this.HoraIn2, this.HoraOut2);
 
   final String id;
-  final String fecha;
-  final String creatat;
-  final String obra;
-  final String horain;
-  final String horaout;
-  final int obra2;
-  final String horain2;
-  final String horaout2;
+  final String Dia;
+  final String Fecha;
+  final String Proyecto;
+  final String HoraIn;
+  final String HoraOut;
+  final String Proyecto2;
+  final String HoraIn2;
+  final String HoraOut2;
 }
