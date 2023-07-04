@@ -105,7 +105,7 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
             .map((e) => Employee(
             e['employee_id'].toString(),
             e['date'].toString(),
-            e['created_at'].toString(),
+            e['created_at'].toString()!= "null" ? e['created_at'] : "null",
             e['obraid'].toString(),
             e['check_in'].toString() != "null" ? e['check_in'] : "null",
             // e['check_in'].toString() != "null" ? e['check_in'] : "00:00",
@@ -255,7 +255,7 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
                           ),
                         );
                         _employeeDataSource.addFilter(
-                          'Dia',
+                          'Dia2',
                           FilterCondition(
                             value: fecha,
                             filterOperator: FilterOperator.and,
@@ -316,24 +316,13 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
                 tableSummaryRows: [
                   GridTableSummaryRow(
                       showSummaryInRow: false,
-                      title: 'Total de dias trabajados: {Count}',
-                      titleColumnSpan: 6,
-                      columns: [
-                        GridSummaryColumn(
-                            name: 'Count',
-                            columnName: 'dia',
-                            summaryType: GridSummaryType.count),
-                      ],
-                      position: GridTableSummaryRowPosition.bottom),
-                  GridTableSummaryRow(
-                      showSummaryInRow: true,
-                      title: 'SUMA {Count2} ',
+                      title: '{Count2}',
                       titleColumnSpan: 6,
                       columns: [
                         GridSummaryColumn(
                             name: 'Count2',
-                            columnName: 'Proyecto2',
-                            summaryType: GridSummaryType.count),
+                            columnName: 'TotalHoras',
+                            summaryType: GridSummaryType.sum),
                       ],
                       position: GridTableSummaryRowPosition.bottom),
 
@@ -359,6 +348,17 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
                             overflow: TextOverflow.ellipsis,
                           ))),
                   GridColumn(
+                      columnName: 'Dia2',
+                      allowFiltering: false,
+                      allowSorting: false,
+                      label: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Dia2',
+                            overflow: TextOverflow.ellipsis,
+                          ))),
+                  GridColumn(
                       columnName: 'Dia',
                       allowFiltering: false,
                       allowSorting: false,
@@ -366,7 +366,7 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'fec',
+                            'Dia',
                             overflow: TextOverflow.ellipsis,
                           ))),
                   GridColumn(
@@ -485,6 +485,7 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
                     StackedHeaderCell(
                         columnNames: [
                           'id',
+                          'Dia2',
                           'Dia',
                           'Fecha',
                           'Proyecto',
@@ -528,12 +529,31 @@ class EmployeeDataSource extends DataGridSource {
       }
     }
   }
+
+  String obtenerSumaDeTiempo2(String HoraOut, String HoraIn, String HoraOut2, String HoraIn2) {
+    if (HoraIn == "null" || HoraOut == "null") {
+      if (HoraIn2 == "null" || HoraOut2 == "null") {
+        return Tiempo3('00:00', '00:00', '00:00', '00:00').obtenerSumadeTiempoenminutos().toString();
+      } else {
+        return Tiempo3('00:00', '00:00', HoraOut2, HoraIn2).obtenerSumadeTiempoenminutos().toString();
+      }
+    } else {
+      if (HoraIn2 == "null" || HoraOut2 == "null") {
+        return Tiempo3(HoraOut, HoraIn, '00:00', '00:00').obtenerSumadeTiempoenminutos().toString();
+      } else {
+        return Tiempo3(HoraOut, HoraIn, HoraOut2, HoraIn2).obtenerSumadeTiempoenminutos().toString();
+      }
+    }
+  }
+
   EmployeeDataSource({required List<Employee> employeeData}) {
     _employeeData = employeeData
         .map<DataGridRow>((e) => DataGridRow(cells: [
       DataGridCell<String>(columnName: 'id', value: e.id),
       DataGridCell<String>(
-          columnName: 'Dia', value: e.Dia.toString().substring(3)),
+          columnName: 'Dia2', value: e.Dia2.toString().substring(3)),
+      DataGridCell<String>(
+          columnName: 'Dia', value: Diadelasemana(e.Fecha).obtenerdia().toString()),
       DataGridCell<String>(
           columnName: 'Fecha',
           value: e.Fecha.split('T')[0].toString()),
@@ -556,9 +576,12 @@ class EmployeeDataSource extends DataGridSource {
               ? "00:00"
               :  Tiempo(e.HoraOut2, e.HoraIn2).obtenerDiferenciaTiempo().toString()
       ),
-      DataGridCell<String>(
+      DataGridCell<int>(
           columnName: 'TotalHoras',
-          value: obtenerSumaDeTiempo(e.HoraOut, e.HoraIn,e.HoraOut2, e.HoraIn2)
+          value: int.parse(obtenerSumaDeTiempo2(e.HoraOut, e.HoraIn,e.HoraOut2, e.HoraIn2))
+      /*DataGridCell<String>(
+          columnName: 'TotalHoras',
+          value: obtenerSumaDeTiempo2(e.HoraOut, e.HoraIn,e.HoraOut2, e.HoraIn2)*/
         /* (DateFormat.Hm()
                           .format(DateFormat("hh:mm").parse(e.HoraOut2))).difference(DateFormat.Hm()
                       .format(DateFormat("hh:mm").parse(e.HoraIn2))))*/
@@ -618,10 +641,15 @@ class EmployeeDataSource extends DataGridSource {
       RowColumnIndex rowColumnIndex,
       String summaryValue,
       ) {
-    print("valooooo {$summaryValue }valooooo");
+    print("valooooo$summaryValue"+"dd");
+int i = int.parse(summaryValue);
+    Duration duracion = Duration(minutes: i);
+    String horasf = '${duracion.inHours}';
+    String minuf= '${duracion.inMinutes.remainder(60).toString().padLeft(2, '0')}';
+    String resultados =  horasf+":"+minuf;
     return Container(
       padding: EdgeInsets.all(15.0),
-      child: Text(summaryValue),
+      child: Text(resultados),
     );
   }
 
@@ -638,6 +666,28 @@ class EmployeeDataSource extends DataGridSource {
         }).toList());
   }
 }
+
+
+class Diadelasemana {
+  String inghora;
+
+  Diadelasemana(this.inghora);
+
+  String obtenerdia() {
+   /* DateTime horaOutDateTime = DateFormat('EEE').parse();
+    String resultado =  horaOutDateTime.toString();*/
+
+    DateTime dateTime = DateTime.parse(inghora);
+    DateFormat dateFormat = DateFormat('E', "es_ES");
+    String resultado = dateFormat.format(dateTime);
+
+    print("dia:$resultado");
+     return resultado;
+  }
+}
+
+
+
 class Tiempo {
   String horaOut;
   String horaIn;
@@ -654,6 +704,38 @@ class Tiempo {
     return resultado;
   }
 }
+
+class Tiempo3 {
+  String horaOut;
+  String horaIn;
+  String horaOut2;
+  String horaIn2;
+
+  Tiempo3(this.horaOut, this.horaIn, this.horaOut2, this.horaIn2);
+
+  String obtenerSumadeTiempoenminutos() {
+    DateTime horaOutDateTime = DateFormat('HH:mm').parse(horaOut);
+    DateTime horaInDateTime = DateFormat('HH:mm').parse(horaIn);
+    DateTime horaOutDateTime2 = DateFormat('HH:mm').parse(horaOut2);
+    DateTime horaInDateTime2 = DateFormat('HH:mm').parse(horaIn2);
+    Duration diferenciaTiempo = horaOutDateTime.difference(horaInDateTime);
+    Duration diferenciaTiempo2 = horaOutDateTime2.difference(horaInDateTime2);
+    Duration sumaHoras = diferenciaTiempo + diferenciaTiempo2 ;
+    String sumahoras = '${sumaHoras.inHours}';
+    String sumaminutos1 = '${sumaHoras.inMinutes}';
+    String sumaminutos = '${sumaHoras.inMinutes.remainder(60).toString().padLeft(2, '0')}';
+    String resultado =  sumahoras +":" + sumaminutos;
+
+
+    print ("minutos:$sumaminutos1");
+
+
+    return sumaminutos1;
+
+  }
+}
+
+
 
 class Tiempo2 {
   String horaOut;
@@ -687,11 +769,11 @@ class Tiempo2 {
 }
 class Employee {
   /// Creates the employee class with required details.
-  Employee(this.id, this.Dia, this.Fecha, this.Proyecto, this.HoraIn,
+  Employee(this.id, this.Dia2, this.Fecha, this.Proyecto, this.HoraIn,
       this.HoraOut, this.Proyecto2, this.HoraIn2, this.HoraOut2);
 
   final String id;
-  final String Dia;
+  final String Dia2;
   final String Fecha;
   final String Proyecto;
   final String HoraIn;
