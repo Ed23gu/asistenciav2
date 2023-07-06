@@ -9,7 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
-void main() async {
+Future <void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // load env
   await dotenv.load(fileName: ".env");
@@ -17,7 +17,7 @@ void main() async {
   String supabaseUrl = dotenv.env['SUPABASE_URL'] ?? '';
   String supabaseKey = dotenv.env['SUPABASE_KEY'] ?? '';
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
-  runApp(const MyApp());
+  runApp( const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
     return AdaptiveTheme(
       dark: ThemeData.dark(),
       light: ThemeData.light(),
-      initial: AdaptiveThemeMode.light,
+      initial: AdaptiveThemeMode.dark,
       builder: (theme, darkTheme) {
         return MultiProvider(
           providers: [

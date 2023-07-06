@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:employee_attendance/constants/constants.dart';
 import 'package:employee_attendance/services/db_service.dart';
@@ -11,11 +10,12 @@ import 'package:employee_attendance/models/user_model.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:syncfusion_flutter_core/theme.dart';
-import 'package:collection/collection.dart';
 import 'package:open_document/my_files/init.dart';
 import 'package:syncfusion_flutter_datagrid_export/export.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:employee_attendance/helper/save_file_mobile.dart' if (dart.library.html) 'package:employee_attendance/helper/save_file_web.dart' as helper;
+
+import '../services/auth_service.dart';
 
 
 class PlanillaScreen extends StatefulWidget {
@@ -179,7 +179,17 @@ class _PlanillaScreenState extends State<PlanillaScreen> {
         body: Column(
 
           children: [
-
+            Container(
+              margin: const EdgeInsets.only(top: 20),
+              alignment: Alignment.topRight,
+              child: TextButton.icon(
+                  onPressed: () {
+                    route.Provider.of<AuthService>(context, listen: false)
+                        .signOut();
+                  },
+                  icon: const Icon(Icons.logout),
+                  label: const Text("Salir")),
+            ),
             Container(
               alignment: Alignment.center,
               margin: const EdgeInsets.only(left: 20, top: 15, bottom: 5),
