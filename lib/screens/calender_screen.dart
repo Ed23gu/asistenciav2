@@ -6,10 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:simple_month_year_picker/simple_month_year_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import '../models/user_model.dart';
 import '../services/db_service.dart';
-
 
 class CalenderScreen extends StatefulWidget {
   const CalenderScreen({super.key});
@@ -348,10 +346,6 @@ class _CalenderScreenState extends State<CalenderScreen> {
                                                                             attendanceData
                                                                                 .checkOutLocation!)
                                                                             .longitude;
-                                                                        /*    print("latitude");
-                                                        print(lat);
-                                                        print("longitude");
-                                                        print(lon); */
                                                                         _openmap(lat.toString(),
                                                                             lon.toString());
                                                                       }),
@@ -456,10 +450,6 @@ class _CalenderScreenState extends State<CalenderScreen> {
                                                                             attendanceData
                                                                                 .checkInLocation2!)
                                                                             .longitude;
-                                                                        /*  print("latitude");
-                                                        print(lat);
-                                                        print("longitude");
-                                                        print(lon); */
                                                                         _openmap(lat.toString(),
                                                                             lon.toString());
                                                                       }),
@@ -482,7 +472,6 @@ class _CalenderScreenState extends State<CalenderScreen> {
                                                                           .brightness ==
                                                                           Brightness.light
                                                                           ? Colors.black
-                                                                      //  color: Colors.white,
                                                                           : Colors.white,
                                                                     ),
                                                                   ),
@@ -501,7 +490,6 @@ class _CalenderScreenState extends State<CalenderScreen> {
                                                                           .brightness ==
                                                                           Brightness.light
                                                                           ? Colors.black
-                                                                      //  color: Colors.white,
                                                                           : Colors.white,
                                                                     ),
                                                                   ),
@@ -517,10 +505,6 @@ class _CalenderScreenState extends State<CalenderScreen> {
                                                                             attendanceData
                                                                                 .checkOutLocation2!)
                                                                             .longitude;
-                                                                        /*  print("latitude");
-                                                        print(lat);
-                                                        print("longitude");
-                                                        print(lon); */
                                                                         _openmap(lat.toString(),
                                                                             lon.toString());
                                                                       }),
@@ -532,12 +516,11 @@ class _CalenderScreenState extends State<CalenderScreen> {
                                           ])),
                                     ]),
                                   ),
-///////////////////////////
+
                                 ],
                               ),
                             );
 
-                            ///////////////////////
                           });
                     } else {
                       return const Center(
