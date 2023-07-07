@@ -3,6 +3,7 @@ import 'package:employee_attendance/constants/constants.dart';
 import 'package:employee_attendance/models/attendance_model.dart';
 import 'package:employee_attendance/models/department_model.dart';
 import 'package:employee_attendance/models/user_model.dart';
+
 import 'package:employee_attendance/services/location_service.dart';
 import 'package:employee_attendance/utils/utils.dart';
 import 'package:flutter/material.dart';
@@ -37,10 +38,22 @@ class AttendanceService extends ChangeNotifier {
     notifyListeners();
   }
 
+  String _attendanceusuario = ' ';
+
+  String get attendanceusuario => _attendanceusuario;
+
+
+  set attendanceusuario(String value) {
+    _attendanceusuario = value;
+    notifyListeners();
+  }
+
+
   String _attendanceHistoryMonth =
       DateFormat('MMMM yyyy').format(DateTime.now());
 
   String get attendanceHistoryMonth => _attendanceHistoryMonth;
+
 
   set attendanceHistoryMonth(String value) {
     _attendanceHistoryMonth = value;
@@ -194,10 +207,10 @@ class AttendanceService extends ChangeNotifier {
     final List data = await _supabase
         .from(Constants.attendancetable)
         .select()
-        //.eq('employee_id', _supabase.auth.currentUser!.id)
+        .eq('employee_id', "$attendanceusuario")
         .textSearch('date', "'$attendanceHistoryMonth'", config: 'english')
         .order('created_at', ascending: false);
-
+print("'$attendanceusuario'");
     return data
         .map((attendance) => AttendanceModel.fromJson(attendance))
         .toList();
